@@ -5,6 +5,7 @@ import { BookingModule } from './booking/booking.module';
 import { TableModule } from './table/table.module';
 import { ormConfig } from '../ormconfig';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     RestaurantModule,
     BookingModule,
     TableModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

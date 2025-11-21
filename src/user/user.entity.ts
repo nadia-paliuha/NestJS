@@ -12,13 +12,17 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ nullable: true })
+  googleId: string;
+
+
   @Column()
   username: string;
 
   @Column()
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   phone: string;
 
   @Column({
