@@ -31,6 +31,7 @@
 
   <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#editProfileModal">Редагувати профіль</button>
   <button class="btn btn-success btn-custom" id="bookTableBtn">Забронювати стіл</button>
+  <button class="btn btn-danger btn-custom" id="logoutBtn">Вийти</button>
 </div>
 
 <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
@@ -87,20 +88,32 @@
         body: JSON.stringify({ username, phone }),
       });
 
-      if (!res.ok) throw new Error('Помилка оновлення профілю');
+      if (!res.ok) throw new Error('Error during updating profile');
 
       const updatedUser = await res.json();
 
       document.getElementById('greeting').innerText = `Привіт, ${updatedUser.username}!`;
-      alert('Профіль оновлено!');
+      alert('Profile updated!');
 
       const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
       modal.hide();
     } catch (err) {
       console.error(err);
-      alert('Не вдалося оновити профіль');
+      alert('Cannot update profile');
     }
   });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const res = await fetch('http://localhost:3000/auth/logout', {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    window.location.href = 'http://localhost:8080/login.html';
+  })
 
 </script>
 </body>
