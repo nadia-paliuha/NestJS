@@ -21,6 +21,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       username: user.username,
+      phone: user.phone,
     });
 
     res.cookie('jwt', token, {

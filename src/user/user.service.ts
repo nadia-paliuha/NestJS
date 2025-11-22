@@ -37,6 +37,9 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
+    if (data.username !== undefined) user.username = data.username;
+    if (data.phone !== undefined) user.phone = data.phone;
+
     Object.assign(user, data);
     return this.userRepository.save(user);
   }
