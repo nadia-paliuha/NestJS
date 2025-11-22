@@ -37,4 +37,10 @@ export class AuthController {
   getMe(@Req() req: any) {
     return req.user;
   }
+
+  @Get('logout')
+  logout(@Res() res: Response) {
+    res.clearCookie('jwt');
+    res.send({ message: 'Logged out' });
+  }
 }
