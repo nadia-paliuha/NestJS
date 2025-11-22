@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Керування столами</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container mt-5">
+
+    <h2 class="text-center mb-4">Керування столами</h2>
+    <div class="text-center mb-4">
+      <button class="btn btn-danger mt-3 w-25" id="baack">Назад</button>
+    </div>
+    <div class="card p-3 mb-4">
+      <h5>Створити новий стіл</h5>
+      <form id="create-table-form">
+        <div class="row">
+          <div class="col">
+            <label>Номер</label>
+            <input type="number" class="form-control" id="number" required>
+          </div>
+          <div class="col">
+            <label>Місткість</label>
+            <input type="number" class="form-control" id="num_of_seats" required>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label>Розташування (опційно)</label>
+          <input type="text" class="form-control" id="location">
+        </div>
+
+        <button class="btn btn-primary mt-3 w-100">Створити</button>
+      </form>
+    </div>
+
+    <table class="table table-bordered text-center">
+      <thead class="table-dark">
+        <tr>
+          <th>Номер</th>
+          <th>Місць</th>
+          <th>Локація</th>
+          <th>Активний</th>
+          <th>Дії</th>
+        </tr>
+      </thead>
+      <tbody id="tables-body"></tbody>
+    </table>
+
+  </div>
+  <div class="modal fade" id="editTableModal" tabindex="-1" aria-labelledby="editTableModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTableModalLabel">Редагувати стіл</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editTableForm">
+            <input type="hidden" id="editTableId">
+            <div class="mb-3">
+              <label for="editNumberInput" class="form-label">Номер столу</label>
+              <input type="number" class="form-control" id="editNumberInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="editSeatsInput" class="form-label">Кількість місць</label>
+              <input type="number" class="form-control" id="editSeatsInput" required>
+            </div>
+            <div class="mb-3">
+              <label for="editLocationInput" class="form-label">Локація</label>
+              <input type="text" class="form-control" id="editLocationInput">
+            </div>
+            <div class="mb-3">
+              <label for="editActiveInput" class="form-label">Активний</label>
+              <select id="editActiveInput" class="form-select">
+                <option value="true">Так</option>
+                <option value="false">Ні</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Зберегти</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+ 
+  document.getElementById('baack').addEventListener('click', () => {
+    window.location.href = 'profile.html';
+  });
+
+  async function loadTables() {
+    const res = await fetch('http://localhost:3000/tables', {
+      credentials: 'include'
+    });
+    const tables = await res.json();
+
+    const body = document.getElementById('tables-body');
+    body.innerHTML = '';
+
+    tables.forEach(t => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${t.number}</td>
+        <td>${t.num_of_seats}</td>
+        <td>${t.location || '-'}</td>
+        <td>${t.active ? 'Так' : 'Ні'}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" onclick="editTable(${t.id})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTable(${t.id})">🗑️</button>
+        </td>
+      `;
+      body.appendChild(row);
+    });
+  }
+
+  document.getElementById('create-table-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      number: Number(document.getElementById('number').value),
+      num_of_seats: Number(document.getElementById('num_of_seats').value),
+      location: document.getElementById('location').value,
+      active: true, 
+      restaurantId: 2
+    };
+
+    await fetch('http://localhost:3000/tables', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    document.getElementById('create-table-form').reset();
+
+    loadTables();
+  });
+
+  async function deleteTable(id) {
+    if (!confirm('Видалити стіл?')) return;
+
+    await fetch(`http://localhost:3000/tables/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    loadTables();
+  }
+
+  async function editTable(id) {
+    const res = await fetch(`http://localhost:3000/tables/${id}`, {
+      credentials: 'include'
+    });
+    const table = await res.json();
+
+    document.getElementById('editTableId').value = table.id;
+    document.getElementById('editNumberInput').value = table.number;
+    document.getElementById('editSeatsInput').value = table.num_of_seats;
+    document.getElementById('editLocationInput').value = table.location || '';
+    document.getElementById('editActiveInput').value = table.active ? "true" : "false";
+
+    const modal = new bootstrap.Modal(document.getElementById('editTableModal'));
+    modal.show();
+  }
+
+  document.getElementById('editTableForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('editTableId').value;
+    const data = {
+      number: Number(document.getElementById('editNumberInput').value),
+      num_of_seats: Number(document.getElementById('editSeatsInput').value),
+      location: document.getElementById('editLocationInput').value,
+      active: document.getElementById('editActiveInput').value === "true",
+    };
+
+    await fetch(`http://localhost:3000/tables/${id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    bootstrap.Modal.getInstance(document.getElementById('editTableModal')).hide();
+    loadTables();
+  });
+
+  loadTables();
+  
+</script> 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

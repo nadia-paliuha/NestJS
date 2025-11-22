@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TableEntity } from './table.entity';
 import { Restaurant } from '../restaurant/restaurant.entity';
+import { CreateTableDto } from './dto/create-table.dto';
+import { UpdateTableDto } from './dto/update-table.dto';
 
 @Injectable()
 export class TableService {
@@ -26,21 +28,36 @@ export class TableService {
     return table;
   }
 
-  async create(data: Partial<TableEntity>, restaurantId: number): Promise<TableEntity> {
+  async create(createDto: CreateTableDto): Promise<TableEntity> {
     const restaurant = await this.restaurantRepo.findOne({
-      where: { id: restaurantId },
+        where: { id: createDto.restaurantId },
     });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    const table = this.tableRepo.create({ ...data, restaurant });
+    const table = this.tableRepo.create({
+        number: createDto.number,
+        num_of_seats: createDto.num_of_seats,
+        location: createDto.location,
+        active: createDto.active,
+        restaurant: restaurant,
+    });
+    
     return this.tableRepo.save(table);
   }
 
-  async update(id: number, data: Partial<TableEntity>): Promise<TableEntity> {
+  async update(id: number, updateDto: UpdateTableDto): Promise<TableEntity> {
     const table = await this.tableRepo.findOne({ where: { id } });
     if (!table) throw new NotFoundException('Table not found');
-
-    Object.assign(table, data);
+    if (updateDto.restaurantId) {
+        const restaurant = await this.restaurantRepo.findOne({
+            where: { id: updateDto.restaurantId },
+        });
+        if (!restaurant) throw new NotFoundException('Restaurant not found');
+        (table as any).restaurant = restaurant; 
+        delete updateDto.restaurantId; 
+    }
+    Object.assign(table, updateDto); 
+    
     return this.tableRepo.save(table);
   }
 

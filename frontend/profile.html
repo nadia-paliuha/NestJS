@@ -88,7 +88,9 @@
     if (!user.error) {
       document.getElementById('greeting').innerText = `Привіт, ${user.username}!`;
       document.getElementById('user-email').innerText = user.email;
-
+      document.getElementById('usernameInput').value = user.username;
+      document.getElementById('phoneInput').value = user.phone;
+    
       if (user.role === 'ADMIN') {
         document.getElementById('adminPanel').style.display = 'block';
       }else{

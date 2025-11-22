@@ -19,9 +19,16 @@ export class TableEntity {
   @Column()
   num_of_seats: number;
 
+  @Column({ default: true })
+  active: boolean;
+
+  @Column({ nullable: true })
+  location: string;
+
   @ManyToOne(() => Restaurant, (r) => r.tables)
   restaurant: Restaurant;
 
   @OneToMany(() => Booking, (b) => b.table)
   bookings: Booking[];
 }
+
