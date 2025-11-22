@@ -9,7 +9,7 @@ import { Restaurant } from '../restaurant/restaurant.entity';
 import { Booking } from '../booking/booking.entity';
 
 @Entity('tables')
-export class Table {
+export class TableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

@@ -1,3 +1,4 @@
+import { Role } from './../user/user.entity';
 import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
@@ -22,6 +23,7 @@ export class AuthController {
       email: user.email,
       username: user.username,
       phone: user.phone,
+      role: user.role,
     });
 
     res.cookie('jwt', token, {

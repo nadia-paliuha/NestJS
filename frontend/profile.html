@@ -26,11 +26,28 @@
 <body>
 
 <div class="profile-card text-center">
-  <h2 id="greeting">Привіт, користувач!</h2>
-  <p id="user-email" class="text-muted"></p>
+  <div id="userPanel" class="mt-4" style="display:none;">
+      <h2 id="greeting">Привіт, користувач!</h2>
+      <p id="user-email" class="text-muted"></p>
 
-  <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#editProfileModal">Редагувати профіль</button>
-  <button class="btn btn-success btn-custom" id="bookTableBtn">Забронювати стіл</button>
+      <button class="btn btn-primary btn-custom" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+        Редагувати профіль
+      </button>
+
+      <button class="btn btn-success btn-custom" id="bookTableBtn">Забронювати стіл</button>
+  </div>
+
+  <div id="adminPanel" class="mt-4" style="display:none;">
+      <h4 class="mb-3">Адмін панель</h4>
+
+      <button class="btn btn-warning btn-custom" onclick="location.href='/admin-tables.html'">
+        Керувати столами
+      </button>
+
+      <button class="btn btn-info btn-custom" onclick="location.href='/admin-bookings.html'">
+        Переглянути всі бронювання
+      </button>
+  </div>
   <button class="btn btn-danger btn-custom" id="logoutBtn">Вийти</button>
 </div>
 
@@ -62,18 +79,24 @@
 <script>
   fetch('http://localhost:3000/auth/me', {
     method: 'GET',
-    credentials: 'include', 
+    credentials: 'include',
   })
   .then(res => res.json())
   .then(user => {
-    console.log('Response from /auth/me:', user);
+    console.log("User:", user);
+
     if (!user.error) {
       document.getElementById('greeting').innerText = `Привіт, ${user.username}!`;
       document.getElementById('user-email').innerText = user.email;
-      document.getElementById('usernameInput').value = user.username;
-      document.getElementById('phoneInput').value = user.phone;
+
+      if (user.role === 'ADMIN') {
+        document.getElementById('adminPanel').style.display = 'block';
+      }else{
+        document.getElementById('userPanel').style.display = 'block';
+      }
     }
   });
+
 
   document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from '../user/user.entity';
-import { TableEntity } from '../table/table.entity';
+import { TableEntity} from '../table/table.entity';
 
 export enum BookingStatus {
   PENDING = 'PENDING',
