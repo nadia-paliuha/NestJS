@@ -20,7 +20,7 @@
     <button class="btn btn-danger mt-3 w-25" id="baack" onclick="location.href='/profile.html'">Назад</button>
   </div>
   <div class="mb-3 text-center">
-    <label for="statusFilter" class="form-label me-2">Фільтр по статусу:</label>
+    <label for="statusFilter" class="form-label me-2">Статус:</label>
     <select id="statusFilter" class="form-select d-inline-block w-auto">
       <option value="">Всі</option>
       <option value="PENDING">PENDING</option>
@@ -28,7 +28,15 @@
       <option value="COMPLETED">COMPLETED</option>
       <option value="CANCELLED">CANCELLED</option>
     </select>
+
+    <label for="usernameFilter" class="form-label ms-3 me-2">Користувач:</label>
+    <input type="text" id="usernameFilter" class="form-control d-inline-block w-auto" placeholder="Ім’я користувача">
+
+    <label for="dateFilter" class="form-label ms-3 me-2">Дата:</label>
+    <input type="date" id="dateFilter" class="form-control d-inline-block w-auto">
   </div>
+  
+
 
   <div id="bookingsError" class="text-center text-danger"></div>
 
@@ -112,8 +120,13 @@
   async function loadAllBookings() {
     try {
       let url = 'http://localhost:3000/booking/all';
-      const status = statusFilter.value;
-      if (status) url += `?status=${status}`;
+      const params = new URLSearchParams();
+
+      if (statusFilter.value) params.append('status', statusFilter.value);
+      if (usernameFilter.value) params.append('username', usernameFilter.value);
+      if (dateFilter.value) params.append('date', dateFilter.value);
+
+      if ([...params].length) url += `?${params.toString()}`;
 
       const res = await fetch(url, { credentials: 'include' });
 
@@ -124,7 +137,7 @@
           errMsg = errData.message || errMsg;
         } catch {}
         bookingsError.textContent = errMsg;
-        bookingsBody.innerHTML = '<tr><td colspan="8">Помилка завантаження</td></tr>';
+        bookingsBody.innerHTML = '<tr><td colspan="9">Помилка завантаження</td></tr>';
         return;
       }
 
@@ -132,7 +145,7 @@
       bookingsError.textContent = '';
 
       if (!bookings.length) {
-        bookingsBody.innerHTML = '<tr><td colspan="8">Броней немає</td></tr>';
+        bookingsBody.innerHTML = '<tr><td colspan="9">Броней немає</td></tr>';
         return;
       }
 
@@ -174,6 +187,8 @@
   }
 
   statusFilter.addEventListener('change', loadAllBookings);
+  usernameFilter.addEventListener('input', loadAllBookings);
+  dateFilter.addEventListener('change', loadAllBookings);
   loadAllBookings();
 </script>
 

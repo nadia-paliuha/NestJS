@@ -37,18 +37,21 @@ export class BookingController {
   @Roles('ADMIN')
   async findAll(
     @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED',
+    @Query('date') date?: string,
+    @Query('username') username?: string
   ) {
-    return this.bookingService.findAll(status);
+    return this.bookingService.findAll({status, date, username});
   }
 
   @Get('my-bookings')
   @UseGuards(JwtAuthGuard)
   async getMyBookings(
     @Req() req: any,
+    @Query('date') date?: string,
     @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED',
   ) {
     const userId = req.user.id;
-    return this.bookingService.findByUser(userId, status);
+    return this.bookingService.findByUser(userId, {status, date});
   }
 
   @Get(':id')
@@ -63,12 +66,5 @@ export class BookingController {
     @Body() updateBookingDto: UpdateBookingDto,
   ) {
     return this.bookingService.updateStatus(id, updateBookingDto);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  delete(@Param('id') id: number) {
-    return this.bookingService.delete(id);
   }
 }

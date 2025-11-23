@@ -111,9 +111,11 @@ export class BookingService {
     await this.bookingRepo.remove(booking);
   }
 
-  async findByUser(userId: number, status?: string): Promise<Booking[]> {
+  async findByUser(userId: number, filters: { status?: string; date?: string }): Promise<Booking[]> {
     const where: any = { user: { id: userId } };
-    if (status) where.status = status;
+
+    if (filters.status) where.status = filters.status;
+    if (filters.date) where.date = filters.date;
 
     return this.bookingRepo.find({
       where,
@@ -122,18 +124,33 @@ export class BookingService {
     });
   }
 
-  async findAll(status?: string): Promise<Booking[]> {
+  async findAll(filters: { status?: string; date?: string; username?: string }): Promise<Booking[]> {
     const where: any = {};
-    if (status) {
-        where.status = status;
+
+    if (filters.status) where.status = filters.status;
+    if (filters.date) where.date = filters.date;
+
+    const query = this.bookingRepo.createQueryBuilder('b')
+      .leftJoinAndSelect('b.user', 'user')
+      .leftJoinAndSelect('b.table', 'table')
+      .orderBy('b.date', 'DESC')
+      .addOrderBy('b.start_time', 'ASC');
+
+    if (filters.username) {
+      query.andWhere('user.username LIKE :username', { username: `%${filters.username}%` });
     }
 
-    return this.bookingRepo.find({
-        where,
-        relations: ['table', 'user'],
-        order: { date: 'DESC', start_time: 'ASC' },
-    });
+    if (filters.status) {
+      query.andWhere('b.status = :status', { status: filters.status });
+    }
+
+    if (filters.date) {
+      query.andWhere('b.date = :date', { date: filters.date });
+    }
+
+    return query.getMany();
   }
+
 
   async updateStatus(id: number, updateBookingDto: UpdateBookingDto): Promise<Booking> {
     const booking = await this.bookingRepo.findOne({
