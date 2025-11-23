@@ -123,9 +123,12 @@ export class BookingService {
     await this.bookingRepo.remove(booking);
   }
 
-  async findByUser(userId: number): Promise<Booking[]> {
+  async findByUser(userId: number, status?: string): Promise<Booking[]> {
+    const where: any = { user: { id: userId } };
+    if (status) where.status = status;
+
     return this.bookingRepo.find({
-      where: { user: { id: userId } },
+      where,
       relations: ['table'],
       order: { date: 'DESC', start_time: 'ASC' },
     });
@@ -137,7 +140,7 @@ export class BookingService {
     });
 
     if (!booking) {
-      throw new NotFoundException('Бронь не знайдена або не ваша');
+      throw new NotFoundException('Бронь не знайдена');
     }
 
     booking.status = BookingStatus.CANCELLED;

@@ -22,6 +22,17 @@
   </div>
   <div id="bookingsError" class="text-center text-danger"></div>
 
+  <div class="mb-3 text-center">
+    <label for="statusFilter" class="form-label me-2">Фільтр по статусу:</label>
+    <select id="statusFilter" class="form-select d-inline-block w-auto">
+      <option value="">Всі</option>
+      <option value="PENDING">PENDING</option>
+      <option value="CONFIRMED">CONFIRMED</option>
+      <option value="COMPLETED">COMPLETED</option>
+      <option value="CANCELLED">CANCELLED</option>
+    </select>
+  </div>
+
   <table class="table table-bordered text-center">
     <thead class="table-dark">
       <tr>
@@ -36,7 +47,7 @@
       </tr>
     </thead>
     <tbody id="bookings-body">
-      <tr><td colspan="6">Завантаження броней...</td></tr>
+      <tr><td colspan="8">Завантаження броней...</td></tr>
     </tbody>
   </table>
 </div>
@@ -48,6 +59,7 @@
 
   const bookingsBody = document.getElementById('bookings-body');
   const bookingsError = document.getElementById('bookingsError');
+  const statusFilter = document.getElementById('statusFilter');
 
   async function cancelBooking(bookingId, row) {
     if (!confirm('Ви впевнені, що хочете скасувати цю бронь?')) return;
@@ -69,7 +81,7 @@
       }
 
       await loadMyBookings();
-      
+
     } catch (err) {
       console.error(err);
       bookingsError.textContent = err.message || 'Сервер недоступний';
@@ -78,9 +90,11 @@
 
   async function loadMyBookings() {
     try {
-      const res = await fetch('http://localhost:3000/booking/my-bookings', {
-        credentials: 'include'
-      });
+      let url = 'http://localhost:3000/booking/my-bookings';
+      const status = statusFilter.value;
+      if (status) url += `?status=${status}`;
+
+      const res = await fetch(url, { credentials: 'include' });
 
       if (!res.ok) {
         let errMsg = 'Помилка при завантаженні броней';
@@ -89,7 +103,7 @@
           errMsg = errData.message || errMsg;
         } catch {}
         bookingsError.textContent = errMsg;
-        bookingsBody.innerHTML = '<tr><td colspan="6">Помилка завантаження</td></tr>';
+        bookingsBody.innerHTML = '<tr><td colspan="8">Помилка завантаження</td></tr>';
         return;
       }
 
@@ -97,7 +111,7 @@
       bookingsError.textContent = '';
       
       if (!bookings.length) {
-        bookingsBody.innerHTML = '<tr><td colspan="6">У вас немає броней</td></tr>';
+        bookingsBody.innerHTML = '<tr><td colspan="8">У вас немає броней</td></tr>';
         return;
       }
 
@@ -135,6 +149,7 @@
     }
   }
 
+  statusFilter.addEventListener('change', loadMyBookings);
   loadMyBookings();
 </script>
 

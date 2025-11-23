@@ -41,9 +41,12 @@ export class BookingController {
 
   @Get('my-bookings')
   @UseGuards(JwtAuthGuard)
-  async getMyBookings(@Req() req: any) {
+  async getMyBookings(
+    @Req() req: any,
+    @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED',
+  ) {
     const userId = req.user.id;
-    return this.bookingService.findByUser(userId);
+    return this.bookingService.findByUser(userId, status);
   }
 
   @Get(':id')
