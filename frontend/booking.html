@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бронювання столів</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .booking-card { max-width: 800px; margin: 50px auto; padding: 30px; background-color: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .btn-custom { width: 100%; margin-top: 10px; }
+    table th, table td { vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<div class="booking-card">
+  <h2 class="text-center mb-4">Бронювання столу</h2>
+  <div class="text-center mb-4">
+    <button class="btn btn-danger w-25" id="baack">Назад</button>
+  </div>
+  <div id="bookingError" class="text-center text-danger mb-3"></div>
+
+  <form id="bookingForm" class="mb-4">
+    <div class="row">
+      <div class="col mb-3">
+        <label for="bookingDate" class="form-label">Дата</label>
+        <input type="date" id="bookingDate" class="form-control" required>
+      </div>
+      <div class="col mb-3">
+          <label for="numGuests" class="form-label">Кількість гостей</label>
+          <input type="number" id="numGuests" class="form-control" min="1" required>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col mb-3">
+        <label for="startTime" class="form-label">Початок</label>
+        <input type="time" id="startTime" class="form-control" required>
+      </div>
+      <div class="col mb-3">
+        <label for="endTime" class="form-label">Кінець</label>
+        <input type="time" id="endTime" class="form-control" required>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label for="tableSelect" class="form-label">Оберіть стіл</label>
+      <select id="tableSelect" class="form-select" required>
+        <option value="">-- оберіть стіл --</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-secondary btn-custom mb-3" id="showTablesBtn">Показати доступні столи</button>
+    <button type="submit" class="btn btn-primary btn-custom">Забронювати</button>
+  </form>
+
+  <h5>Доступні столи</h5>
+  <table class="table table-bordered text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>Номер</th>
+        <th>Місць</th>
+        <th>Локація</th>
+      </tr>
+    </thead>
+    <tbody id="tables-body"></tbody>
+  </table>
+</div>
+
+
+<script>
+  document.getElementById('baack').addEventListener('click', () => {
+    window.location.href = 'profile.html';
+  });
+  const errorBlock = document.getElementById('bookingError');
+  const tableSelect = document.getElementById('tableSelect');
+  const tablesBody = document.getElementById('tables-body');
+  let pressButton = false;
+
+  let availableTables = []; 
+
+  function resetTables() {
+    if(pressButton){
+      tableSelect.innerHTML = '<option value="">-- оберіть стіл --</option>';
+      tablesBody.innerHTML = '';
+      availableTables = [];
+      
+      errorBlock.textContent = 'Дані змінилися. Будь ласка, натисніть кнопку "Показати доступні столи" ще раз.';
+    }
+      
+  }
+
+  ['bookingDate', 'startTime', 'endTime', 'numGuests'].forEach(id => {
+    document.getElementById(id).addEventListener('input', resetTables);
+  });
+
+  document.getElementById('showTablesBtn').addEventListener('click', async () => {
+    const date = document.getElementById('bookingDate').value;
+    const start = document.getElementById('startTime').value;
+    const end = document.getElementById('endTime').value;
+    const guests = Number(document.getElementById('numGuests').value);
+
+    if (!date || !start || !end || !guests || guests <= 0 || !Number.isInteger(guests)) {
+      errorBlock.textContent = 'Будь ласка, введіть всі дані та правильну кількість гостей!';
+      return;
+    }
+
+    let res;
+    try {
+        res = await fetch(`http://localhost:3000/booking/available?date=${date}&start_time=${start}&end_time=${end}&numGuests=${guests}`, {
+          credentials: 'include'
+        });
+    } catch (e) {
+        errorBlock.textContent = 'Сервер недоступний';
+        return;
+    }
+
+    if (!res.ok) {
+      try {
+        const err = await res.json();
+        errorBlock.textContent = err.message || 'Помилка на сервері';
+      } catch {
+        errorBlock.textContent = 'Помилка на сервері';
+      }
+      return;
+    }
+
+    const tables = await res.json();
+    availableTables = tables;
+
+    pressButton = true;
+
+    tableSelect.innerHTML = '<option value="">-- оберіть стіл --</option>';
+    tablesBody.innerHTML = '';
+
+    if (!tables.length) {
+      tablesBody.innerHTML = `<tr><td colspan="3">Немає доступних столів</td></tr>`;
+      errorBlock.textContent = '';
+      return;
+    }
+
+    tables.forEach(t => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${t.number}</td><td>${t.num_of_seats}</td><td>${t.location || '-'}</td>`;
+      tablesBody.appendChild(row);
+
+      const option = document.createElement('option');
+      option.value = t.id;
+      option.textContent = `Стіл ${t.number} (${t.num_of_seats} місць)`;
+      tableSelect.appendChild(option);
+    });
+
+    errorBlock.textContent = '';
+  });
+
+  document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!pressButton) {
+      errorBlock.textContent = 'Будь ласка, натисніть кнопку "Показати доступні столи" перед бронюванням.';
+      return;
+    }
+
+    const tableId = Number(document.getElementById('tableSelect').value);
+    const date = document.getElementById('bookingDate').value;
+    const start_time = document.getElementById('startTime').value;
+    const end_time = document.getElementById('endTime').value;
+    const numGuests = Number(document.getElementById('numGuests').value);
+
+    errorBlock.textContent = '';
+
+    if(!tableId){
+      errorBlock.textContent = 'Оберіть стіл!';
+      return;
+    }
+
+    if (!date || !start_time || !end_time || !numGuests || numGuests <= 0) { 
+      errorBlock.textContent = 'Будь ласка, введіть всі дані та правильну кількість гостей!';
+      return; 
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3000/booking/reserve/${tableId}/user`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          tableId, 
+          date, 
+          start_time, 
+          end_time, 
+          numGuests 
+        })
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Помилка при бронюванні';
+        try { 
+          const errData = await res.json(); 
+          errMsg = errData.message || errMsg; 
+        } catch (err) {}
+        errorBlock.textContent = errMsg;
+        return;
+      }
+      errorBlock.textContent = '';
+      alert('Стіл заброньовано! Статус: PENDING');
+      document.getElementById('bookingForm').reset();
+      document.getElementById('tables-body').innerHTML = ''; 
+      document.getElementById('tableSelect').innerHTML = '<option value="">-- оберіть стіл --</option>';
+
+    } catch (err) {
+      console.error(err);
+      errorBlock.textContent = err.message || 'Сервер недоступний';
+    }
+  });
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

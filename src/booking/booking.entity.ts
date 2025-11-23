@@ -20,6 +20,9 @@ export class Booking {
   @ManyToOne(() => User, (u) => u.bookings)
   user: User;
 
+  @Column({ type: 'integer'})
+  numGuests: number;
+
   @Column({ type: 'date' })
   date: string;
 

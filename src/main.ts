@@ -19,11 +19,11 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.useGlobalPipes(
-  new ValidationPipe({
-    transform: true, 
-    whitelist: true, 
-  }),
-);
+    new ValidationPipe({
+      transform: false, 
+      whitelist: false, 
+    }),
+  );
 
   await app.listen(3000);
 }

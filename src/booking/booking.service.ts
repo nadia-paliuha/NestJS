@@ -1,24 +1,80 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Booking } from './booking.entity';
-import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingDto } from './dto/update-booking.dto';
+import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Booking, BookingStatus } from './booking.entity';
 import { TableEntity } from '../table/table.entity';
-import { User } from '../user/user.entity';
+import { CheckAvailabilityDto } from './dto/check-availability.dto';
+import { Restaurant } from '../restaurant/restaurant.entity';
+import { CreateBookingDto } from './dto/create-booking.dto';
+import { User } from 'src/user/user.entity';
+import { UpdateBookingDto } from './dto/update-booking.dto';
 
 @Injectable()
 export class BookingService {
   constructor(
     @InjectRepository(Booking)
-    private readonly bookingRepo: Repository<Booking>,
+    private bookingRepo: Repository<Booking>,
+
     @InjectRepository(TableEntity)
-    private readonly tableRepo: Repository<TableEntity>,
+    private tableRepository: Repository<TableEntity>,
+
+    @InjectRepository(Restaurant)
+    private restaurantRepository: Repository<Restaurant>,
+
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private userRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<Booking[]> {
+  async getAvailableTables(dto: CheckAvailabilityDto): Promise<TableEntity[]> {
+    const { date, start_time, end_time, numGuests } = dto;
+
+    if (end_time <= start_time) {
+      throw new BadRequestException('Час завершення має бути пізніше часу початку');
+    }
+
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id: 2 },
+    });
+
+    if (!restaurant) throw new BadRequestException('Ресторан не знайдено');
+
+    const OPEN = restaurant.start_work.slice(0, 5);;
+    const CLOSE = restaurant.end_work.slice(0, 5);; 
+
+    if (start_time < OPEN || end_time > CLOSE) {
+      throw new BadRequestException(
+        `Бронювання можливе лише з ${OPEN} до ${CLOSE}`
+      );
+    }
+
+    const now = new Date();
+    const bookingStart = new Date(`${date}T${start_time}:00`);
+
+    if (bookingStart < now) {
+      throw new BadRequestException('Неможливо бронювати на час, що вже минув');
+    }
+
+    const tables = await this.tableRepository.find({
+      where: { active: true, num_of_seats: MoreThanOrEqual(numGuests) },
+      relations: ['bookings'],
+    });
+
+    const available = tables.filter((table) => {
+      return !table.bookings.some((b) => {
+        if (b.date !== date || b.status === BookingStatus.CANCELLED) return false;
+
+        return (
+          (start_time >= b.start_time && start_time < b.end_time) ||
+          (end_time > b.start_time && end_time <= b.end_time) ||
+          (start_time <= b.start_time && end_time >= b.end_time)
+        );
+      });
+    });
+
+    return available;
+  }
+
+   async findAll(): Promise<Booking[]> {
     return this.bookingRepo.find({relations: ['table', 'user']});
   }
 
@@ -31,20 +87,22 @@ export class BookingService {
     return booking;
   }
 
-  async create(userId: number, createDto: CreateBookingDto): Promise<Booking> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+  async createBooking(userId: number, dto: CreateBookingDto): Promise<Booking> {
+    const table = await this.tableRepository.findOne({ where: { id: dto.tableId } });
 
-    const table = await this.tableRepo.findOne({ where: { id: createDto.tableId } });
-    if (!table) throw new NotFoundException('Table not found');
+    if (!table) throw new BadRequestException('Стіл не знайдено');
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('Користувача не знайдено');
 
     const booking = this.bookingRepo.create({
-      user,
-      table,
-      date: createDto.date,
-      start_time: createDto.start_time,
-      end_time: createDto.end_time,
-      status: createDto.status,
+      table: table,
+      user: user,
+      date: dto.date,
+      start_time: dto.start_time,
+      end_time: dto.end_time,
+      numGuests: dto.numGuests,
+      status: dto.status || BookingStatus.PENDING,
     });
 
     return this.bookingRepo.save(booking);
@@ -72,4 +130,5 @@ export class BookingService {
       order: { date: 'DESC', start_time: 'ASC' },
     });
   }
+
 }

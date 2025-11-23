@@ -1,9 +1,14 @@
-import { IsNotEmpty, IsDateString, IsEnum, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsDateString, IsEnum, IsNumber, } from 'class-validator';
 import { BookingStatus } from '../booking.entity';
+import { Type } from 'class-transformer';
 
 export class CreateBookingDto {
+  @Type(() => Number)
   @IsNumber()
   tableId: number;
+
+  @IsNumber()
+  numGuests: number;
 
   @IsDateString()
   date: string;
