@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThanOrEqual, Not } from 'typeorm';
 import { Booking, BookingStatus } from './booking.entity';
 import { TableEntity } from '../table/table.entity';
 import { CheckAvailabilityDto } from './dto/check-availability.dto';
@@ -90,6 +90,22 @@ export class BookingService {
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new BadRequestException('Користувача не знайдено');
+
+    const overlapping = await this.bookingRepo.findOne({
+      where: {
+        user: { id: userId },
+        date: dto.date,
+        status: Not(BookingStatus.CANCELLED),
+        start_time: LessThanOrEqual(dto.end_time),
+        end_time: MoreThanOrEqual(dto.start_time),
+      },
+    });
+
+    if (overlapping) {
+      throw new BadRequestException(
+        'Ви вже маєте незавершену бронь, яка перетинається в часі. Скасуйте її і поверніться до створення нової.'
+      );
+    }
 
     const booking = this.bookingRepo.create({
       table: table,
