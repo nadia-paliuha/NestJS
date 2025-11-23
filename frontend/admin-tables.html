@@ -11,7 +11,7 @@
 
     <h2 class="text-center mb-4">Керування столами</h2>
     <div class="text-center mb-4">
-      <button class="btn btn-danger mt-3 w-25" id="baack">Назад</button>
+      <button class="btn btn-danger mt-3 w-25" id="baack" onclick="location.href='/profile.html'">Назад</button>
     </div>
     <div class="card p-3 mb-4">
       <h5>Створити новий стіл</h5>
@@ -87,11 +87,6 @@
   </div>
 
 <script>
- 
-  document.getElementById('baack').addEventListener('click', () => {
-    window.location.href = 'profile.html';
-  });
-
   async function loadTables() {
     const res = await fetch('http://localhost:3000/tables', {
       credentials: 'include'

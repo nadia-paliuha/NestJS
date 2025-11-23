@@ -32,11 +32,13 @@ export class BookingController {
     return this.bookingService.createBooking(userId, dto);
   }
 
-  @Get()
+  @Get('all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  findAll() {
-    return this.bookingService.findAll();
+  async findAll(
+    @Query('status') status?: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED',
+  ) {
+    return this.bookingService.findAll(status);
   }
 
   @Get('my-bookings')
@@ -55,11 +57,12 @@ export class BookingController {
     return this.bookingService.findOne(id);
   }
 
-  @Put(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  updateStatus(@Param('id') id: number, @Body() updateDto: UpdateBookingDto) {
-    return this.bookingService.updateStatus(id, updateDto);
+  @Patch('update-status/:id')
+  async updateBookingStatus(
+    @Param('id') id: number,
+    @Body() updateBookingDto: UpdateBookingDto,
+  ) {
+    return this.bookingService.updateStatus(id, updateBookingDto);
   }
 
   @Delete(':id')
@@ -68,12 +71,4 @@ export class BookingController {
   delete(@Param('id') id: number) {
     return this.bookingService.delete(id);
   }
-
-  @Patch('cancel/:id')
-  @UseGuards(JwtAuthGuard)
-  async cancelBooking(@Param('id') id: number, @Req() req: any) {
-    const userId = req.user.id;
-    return this.bookingService.cancel(Number(id), userId);
-  }
-
 }

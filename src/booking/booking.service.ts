@@ -74,10 +74,6 @@ export class BookingService {
     return available;
   }
 
-  async findAll(): Promise<Booking[]> {
-    return this.bookingRepo.find({relations: ['table', 'user']});
-  }
-
   async findOne(id: number): Promise<Booking> {
     const booking = await this.bookingRepo.findOne({
       where: { id },
@@ -108,14 +104,6 @@ export class BookingService {
     return this.bookingRepo.save(booking);
   }
 
-  async updateStatus(id: number, updateDto: UpdateBookingDto): Promise<Booking> {
-    const booking = await this.bookingRepo.findOne({ where: { id } });
-    if (!booking) throw new NotFoundException('Booking not found');
-
-    booking.status = updateDto.status;
-    return this.bookingRepo.save(booking);
-  }
-
   async delete(id: number): Promise<void> {
     const booking = await this.bookingRepo.findOne({ where: { id } });
     if (!booking) throw new NotFoundException('Booking not found');
@@ -134,16 +122,32 @@ export class BookingService {
     });
   }
 
-  async cancel(id: number, userId: number): Promise<Booking> {
-    const booking = await this.bookingRepo.findOne({
-      where: { id, user: { id: userId } },
-    });
-
-    if (!booking) {
-      throw new NotFoundException('Бронь не знайдена');
+  async findAll(status?: string): Promise<Booking[]> {
+    const where: any = {};
+    if (status) {
+        where.status = status;
     }
 
-    booking.status = BookingStatus.CANCELLED;
+    return this.bookingRepo.find({
+        where,
+        relations: ['table', 'user'],
+        order: { date: 'DESC', start_time: 'ASC' },
+    });
+  }
+
+  async updateStatus(id: number, updateBookingDto: UpdateBookingDto): Promise<Booking> {
+    const booking = await this.bookingRepo.findOne({
+      where: { id },
+      relations: ['table', 'user'],
+    });
+
+    if (!booking) throw new NotFoundException('Бронь не знайдена');
+
+    if (booking.status === updateBookingDto.status) {
+      throw new BadRequestException('Статус вже встановлено');
+    }
+
+    booking.status = updateBookingDto.status;
     return this.bookingRepo.save(booking);
   }
 

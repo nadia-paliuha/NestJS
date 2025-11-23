@@ -17,7 +17,7 @@
 <div class="booking-card">
   <h2 class="text-center mb-4">Бронювання столу</h2>
   <div class="text-center mb-4">
-    <button class="btn btn-danger w-25" id="baack">Назад</button>
+    <button class="btn btn-danger mt-3 w-25" id="baack" onclick="location.href='/profile.html'">Назад</button>
   </div>
   <div id="bookingError" class="text-center text-danger mb-3"></div>
 
@@ -68,9 +68,6 @@
 
 
 <script>
-  document.getElementById('baack').addEventListener('click', () => {
-    window.location.href = 'profile.html';
-  });
   const errorBlock = document.getElementById('bookingError');
   const tableSelect = document.getElementById('tableSelect');
   const tablesBody = document.getElementById('tables-body');
