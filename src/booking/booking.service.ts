@@ -38,8 +38,8 @@ export class BookingService {
 
     if (!restaurant) throw new BadRequestException('Ресторан не знайдено');
 
-    const OPEN = restaurant.start_work.slice(0, 5);;
-    const CLOSE = restaurant.end_work.slice(0, 5);; 
+    const OPEN = restaurant.start_work.slice(0, 5);
+    const CLOSE = restaurant.end_work.slice(0, 5); 
 
     if (start_time < OPEN || end_time > CLOSE) {
       throw new BadRequestException(
@@ -74,7 +74,7 @@ export class BookingService {
     return available;
   }
 
-   async findAll(): Promise<Booking[]> {
+  async findAll(): Promise<Booking[]> {
     return this.bookingRepo.find({relations: ['table', 'user']});
   }
 
@@ -129,6 +129,19 @@ export class BookingService {
       relations: ['table'],
       order: { date: 'DESC', start_time: 'ASC' },
     });
+  }
+
+  async cancel(id: number, userId: number): Promise<Booking> {
+    const booking = await this.bookingRepo.findOne({
+      where: { id, user: { id: userId } },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Бронь не знайдена або не ваша');
+    }
+
+    booking.status = BookingStatus.CANCELLED;
+    return this.bookingRepo.save(booking);
   }
 
 }

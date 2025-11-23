@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, UsePipes, ValidationPipe, UseGuards, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UsePipes, ValidationPipe, UseGuards, Req, ParseIntPipe, Patch } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CheckAvailabilityDto } from './dto/check-availability.dto';
 import { Booking } from './booking.entity';
@@ -39,6 +39,13 @@ export class BookingController {
     return this.bookingService.findAll();
   }
 
+  @Get('my-bookings')
+  @UseGuards(JwtAuthGuard)
+  async getMyBookings(@Req() req: any) {
+    const userId = req.user.id;
+    return this.bookingService.findByUser(userId);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: number) {
@@ -59,10 +66,11 @@ export class BookingController {
     return this.bookingService.delete(id);
   }
 
-  @Get('mine')
+  @Patch('cancel/:id')
   @UseGuards(JwtAuthGuard)
-  async getMyBookings(@Req() req: any) {
+  async cancelBooking(@Param('id') id: number, @Req() req: any) {
     const userId = req.user.id;
-    return this.bookingService.findByUser(userId);
+    return this.bookingService.cancel(Number(id), userId);
   }
+
 }
